@@ -64,7 +64,7 @@ if __name__=='__main__':
   for i2 in range(Start_Number,Start_Number + CountRepead):
     url=SheetAc['D'+str(i2)].value
     if url : 
-      driver.implicitly_wait(10)  # Установить 10 секунд времени ожидания
+      driver.implicitly_wait(20)  # Установить 20 секунд времени ожидания
       driver.get(url)
       try:
         WebDriverWait(driver,30).until(EC.visibility_of_element_located((By.ID,'highcharts-information-region-1'))) 
