@@ -1,4 +1,4 @@
-class emp:
+class Emp:
      NameSc=''
      NameTable=''
      CountDoc=0
