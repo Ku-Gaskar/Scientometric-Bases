@@ -56,11 +56,15 @@ if __name__=='__main__':
         mb.showwarning("Ошибка","Страница не загружена. \n Программа завершит работу")
         sys.exit()        
 
-      s1=driver.find_elements(By.CSS_SELECTOR,'span.typography_ceae25.font-size-xl_ceae25.sans_ceae25')
-      s2=driver.find_element(By.CSS_SELECTOR,'#scopus-author-profile-page-control-microui__general-information-content > section > div > section > div > div:nth-child(1) > div > div > div:nth-child(2) > span > p > span > em > strong').text
-      client.Citir=int(s1[0].text.replace(' ',''))
-      client.CountDoc=int(s2)
-      client.H_ind=int(s1[2].text.replace(' ',''))
+      try:
+        s1=driver.find_elements(By.CSS_SELECTOR,'span.typography_ceae25.font-size-xl_ceae25.sans_ceae25')
+        s2=driver.find_element(By.CSS_SELECTOR,'#scopus-author-profile-page-control-microui__general-information-content > section > div > section > div > div:nth-child(1) > div > div > div:nth-child(2) > span > p > span > em > strong').text
+        client.Citir=int(s1[0].text.replace(' ',''))
+        client.CountDoc=int(s2)
+        client.H_ind=int(s1[2].text.replace(' ',''))
+      except:  
+        mb.showwarning("Ошибка","Ошибка на странице. \n Программа завершит работу")
+        sys.exit()        
 
       print('doc = {}, {}, {}'.format(client.CountDoc,client.Citir,client.H_ind)) 
  
