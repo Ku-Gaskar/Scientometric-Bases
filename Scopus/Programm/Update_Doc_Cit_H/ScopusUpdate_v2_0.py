@@ -18,6 +18,22 @@ from employee_class import Emp
 
 from datetime import date
 
+#**************************** functions *****************************************
+def Close_Aplications():
+    current_date = str(date.today())
+    Namefile=re.sub('[\(\)\-_0-9]*(.xlsx)',current_date+r'\1',Path_GreenTable,count=1)
+    i=1
+    Name_=Namefile[:-5]
+    while os.path.isfile(Namefile):
+      Namefile=Name_+'('+str(i)+')'+'.xlsx'
+      i+=1
+
+    GreenTable.save(Namefile)
+    GreenTable.close()  
+    driver.quit()
+    mb.showinfo('Программа завершена','Результат в файле:\n'+Namefile)
+    sys.exit()
+
 #******************************* main ******************************************
 if __name__=='__main__':
     
@@ -51,10 +67,10 @@ if __name__=='__main__':
       driver.implicitly_wait(10)  # Установить 10 секунд времени ожидания
       driver.get(url)
       try:
-        WebDriverWait(driver,15).until(EC.visibility_of_element_located((By.ID,'highcharts-information-region-1'))) 
+        WebDriverWait(driver,30).until(EC.visibility_of_element_located((By.ID,'highcharts-information-region-1'))) 
       except:
         mb.showwarning("Ошибка","Страница не загружена. \n Программа завершит работу")
-        sys.exit()        
+        Close_Aplications()        
 
       try:
         s1=driver.find_elements(By.CSS_SELECTOR,'span.typography_ceae25.font-size-xl_ceae25.sans_ceae25')
@@ -64,7 +80,7 @@ if __name__=='__main__':
         client.H_ind=int(s1[2].text.replace(' ',''))
       except:  
         mb.showwarning("Ошибка","Ошибка на странице. \n Программа завершит работу")
-        sys.exit()        
+        Close_Aplications()       
 
       print('doc = {}, {}, {}'.format(client.CountDoc,client.Citir,client.H_ind)) 
  
@@ -79,16 +95,4 @@ if __name__=='__main__':
       SheetAc['F'+str(i2)].value=client.Citir
       SheetAc['G'+str(i2)].value=client.H_ind
   
-  current_date = str(date.today())
-  Namefile=re.sub('[\(\)\-_0-9]*(.xlsx)',current_date+r'\1',Path_GreenTable,count=1)
-  i=1
-  Name_=Namefile[:-5]
-  while os.path.isfile(Namefile):
-    Namefile=Name_+'('+str(i)+')'+'.xlsx'
-    i+=1
-
-  GreenTable.save(Namefile)
-  GreenTable.close()  
-  driver.quit()
-  mb.showinfo('Программа завершена','Результат в файле:\n'+Namefile)
-  sys.exit()
+  Close_Aplications()
