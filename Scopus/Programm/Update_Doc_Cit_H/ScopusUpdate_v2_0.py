@@ -47,8 +47,8 @@ if __name__=='__main__':
 
   GreenTable = openpyxl.load_workbook(Path_GreenTable)
   SheetAc=GreenTable.active
-  Start_Number=integerbox("Введите начальный номер строки","Ввод числа от 3 до "+ str(SheetAc.max_row),None,3,SheetAc.max_row)
-  CountRepead=integerbox("Введите количество повторов","Ввод числа от 1 до "+ str(SheetAc.max_row-3),None,1,SheetAc.max_row-3)
+  Start_Number=integerbox("Введите начальный номер строки","Ввод числа от 3 до "+ str(SheetAc.max_row),3,3,SheetAc.max_row)
+  CountRepead=integerbox("Введите количество повторов","Ввод числа от 1 до "+ str(SheetAc.max_row-3),SheetAc.max_row-3,1,SheetAc.max_row-3)
 
   for  tyty in SheetAc['E'+str(Start_Number):'G'+ str(Start_Number + CountRepead - 1)]:
     for strk in tyty :#cell_range:  E-G
@@ -74,20 +74,25 @@ if __name__=='__main__':
 
       try:
         s1=driver.find_elements(By.CSS_SELECTOR,'span.typography_ceae25.font-size-xl_ceae25.sans_ceae25')
-        s2=driver.find_element(By.CSS_SELECTOR,'#scopus-author-profile-page-control-microui__general-information-content > section > div > section > div > div:nth-child(1) > div > div > div:nth-child(2) > span > p > span > em > strong').text
+        s2=driver.find_element(By.CSS_SELECTOR,'#scopus-author-profile-page-control-microui__documents-tab > span').text
+        s2=re.findall(r'[ 0-9]*',s2)[0]
         client.Citir=int(s1[0].text.replace(' ',''))
-        client.CountDoc=int(s2)
+        client.CountDoc=int(s2.replace(' ',''))
         client.H_ind=int(s1[2].text.replace(' ',''))
       except:  
         mb.showwarning("Ошибка","Ошибка на странице. \n Программа завершит работу")
         Close_Aplications()       
 
-      print('doc = {}, {}, {}'.format(client.CountDoc,client.Citir,client.H_ind)) 
- 
+      #print('doc = {}, {}, {}'.format(client.CountDoc,client.Citir,client.H_ind)) 
+      if SheetAc['E'+str(i2)].value == None: SheetAc['E'+str(i2)].value = 0
       if int(SheetAc['E'+str(i2)].value) <= client.CountDoc : SheetAc['E'+str(i2)].fill=st.PatternFill('solid',fgColor=fillConf) 
       else : SheetAc['E'+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor) 
+      
+      if SheetAc['F'+str(i2)].value == None: SheetAc['F'+str(i2)].value = 0
       if int(SheetAc['F'+str(i2)].value) <= client.Citir : SheetAc['F'+str(i2)].fill=st.PatternFill('solid',fgColor=fillConf) 
       else : SheetAc['F'+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor)
+      
+      if SheetAc['G'+str(i2)].value == None: SheetAc['G'+str(i2)].value = 0
       if int(SheetAc['G'+str(i2)].value) <= client.H_ind: SheetAc['G'+str(i2)].fill=st.PatternFill('solid',fgColor=fillConf) 
       else : SheetAc['G'+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor) 
       SheetAc['E'+str(i2)].value=client.CountDoc
