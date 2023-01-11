@@ -2,6 +2,8 @@ import sys
 import os
 import re
 
+import app_logger
+
 from tkinter import filedialog
 import tkinter.messagebox as mb
 from easygui import integerbox
@@ -33,15 +35,26 @@ def Close_Aplications():
     driver.quit()
     mb.showinfo('Программа завершена','Результат в файле:\n'+Namefile)
     sys.exit()
+#--------------------------------------------------------------------------------
+def Compare_Field(Litera:str,Ref:int)->None:
+    if SheetAc[Litera].value == None: SheetAc[Litera].value = 0
+    if int(SheetAc[Litera].value) <= Ref: SheetAc[Litera].fill=st.PatternFill('solid',fgColor=fillConf) 
+    else : SheetAc[Litera].fill=st.PatternFill('solid',fgColor=RedColor)
+    SheetAc[Litera].value=Ref
+    return
+
 
 #******************************* main ******************************************
-if __name__=='__main__':
-    
+if __name__=='__main__': 
+  
+  logger = app_logger.get_logger(__name__)
+  logger.info("Программа стартует") 
   RedColor='FF0000'
   fillConf='00FFFF'
 
   Path_GreenTable=filedialog.askopenfilename(title='Откройте \"Таблица ученных ...\"',filetypes=[('Excel file','*.xlsx')])
   if not Path_GreenTable: 
+    logger.warning("Файл зеленой таблицы не выбран.")
     mb.showwarning("Ошибка","Файл зеленой таблицы не выбран. \n Программа завершит работу")
     sys.exit()
 
@@ -65,12 +78,18 @@ if __name__=='__main__':
     url=SheetAc['D'+str(i2)].value
     if url : 
       driver.implicitly_wait(20)  # Установить 20 секунд времени ожидания
-      driver.get(url)
       try:
-        WebDriverWait(driver,30).until(EC.visibility_of_element_located((By.ID,'highcharts-information-region-1'))) 
+        driver.get(url)
       except:
-        mb.showwarning("Ошибка","Страница не загружена. \n Программа завершит работу")
-        Close_Aplications()        
+        logger.warning("URL недействителен: "+url)
+        continue  
+      try:
+        WebDriverWait(driver,20).until(EC.visibility_of_element_located((By.ID,'highcharts-information-region-1'))) 
+      except:
+        #mb.showwarning("Ошибка","Страница не загружена. \n Программа завершит работу")
+        #Close_Aplications()        
+        logger.warning("Страница не загружена: "+SheetAc['B'+str(i2)].value +'; URL---> '+url)
+        continue  
 
       try:
         s1=driver.find_elements(By.CSS_SELECTOR,'span.typography_ceae25.font-size-xl_ceae25.sans_ceae25')
@@ -80,24 +99,15 @@ if __name__=='__main__':
         client.CountDoc=int(s2.replace(' ',''))
         client.H_ind=int(s1[2].text.replace(' ',''))
       except:  
-        mb.showwarning("Ошибка","Ошибка на странице. \n Программа завершит работу")
-        Close_Aplications()       
+        logger.warning("Ошибка на странице: "+SheetAc['B'+str(i2)].value +'; URL---> '+url)
+        continue  
+
+        #mb.showwarning("Ошибка","Ошибка на странице. \n Программа завершит работу")
+        #Close_Aplications()       
 
       #print('doc = {}, {}, {}'.format(client.CountDoc,client.Citir,client.H_ind)) 
-      if SheetAc['E'+str(i2)].value == None: SheetAc['E'+str(i2)].value = 0
-      if int(SheetAc['E'+str(i2)].value) <= client.CountDoc : SheetAc['E'+str(i2)].fill=st.PatternFill('solid',fgColor=fillConf) 
-      else : SheetAc['E'+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor) 
-      
-      if SheetAc['F'+str(i2)].value == None: SheetAc['F'+str(i2)].value = 0
-      if int(SheetAc['F'+str(i2)].value) <= client.Citir : SheetAc['F'+str(i2)].fill=st.PatternFill('solid',fgColor=fillConf) 
-      else : SheetAc['F'+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor)
-      
-      if SheetAc['G'+str(i2)].value == None: SheetAc['G'+str(i2)].value = 0
-      if int(SheetAc['G'+str(i2)].value) <= client.H_ind: SheetAc['G'+str(i2)].fill=st.PatternFill('solid',fgColor=fillConf) 
-      else : SheetAc['G'+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor) 
-      SheetAc['E'+str(i2)].value=client.CountDoc
-      SheetAc['E'+str(i2)].fill=st.PatternFill('solid',fgColor=fillConf)
-      SheetAc['F'+str(i2)].value=client.Citir
-      SheetAc['G'+str(i2)].value=client.H_ind
+      Compare_Field('E'+str(i2),client.CountDoc)
+      Compare_Field('F'+str(i2),client.Citir)
+      Compare_Field('G'+str(i2),client.H_ind)  
   
   Close_Aplications()
