@@ -81,8 +81,8 @@ if __name__=='__main__':
       try:
         driver.get(url)
       except:
-        logger.warning("URL недействителен: "+url)
-        SheetAc['D'+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor)
+        logger.warning("URL недействителен: "+ SheetAc['B'+str(i2)].value +url)
+        for c in 'DEFG':SheetAc[c+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor)
         continue  
       try:
         WebDriverWait(driver,20).until(EC.visibility_of_element_located((By.ID,'highcharts-information-region-1'))) 
@@ -90,7 +90,7 @@ if __name__=='__main__':
         #mb.showwarning("Ошибка","Страница не загружена. \n Программа завершит работу")
         #Close_Aplications()        
         logger.warning("Страница не загружена: "+SheetAc['B'+str(i2)].value +'; URL---> '+url)
-        SheetAc['D'+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor)
+        for c in 'DEFG':SheetAc[c+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor)
         continue  
 
       try:
@@ -102,12 +102,12 @@ if __name__=='__main__':
         client.H_ind=int(s1[2].text.replace(' ',''))
       except:  
         logger.warning("Ошибка на странице: "+SheetAc['B'+str(i2)].value +'; URL---> '+url)
+        for c in 'DEFG':SheetAc[c+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor)
         continue  
 
         #mb.showwarning("Ошибка","Ошибка на странице. \n Программа завершит работу")
         #Close_Aplications()       
 
-      #print('doc = {}, {}, {}'.format(client.CountDoc,client.Citir,client.H_ind)) 
       Compare_Field('E'+str(i2),client.CountDoc)
       Compare_Field('F'+str(i2),client.Citir)
       Compare_Field('G'+str(i2),client.H_ind)  
