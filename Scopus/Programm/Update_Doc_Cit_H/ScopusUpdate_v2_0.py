@@ -61,7 +61,7 @@ if __name__=='__main__':
   GreenTable = openpyxl.load_workbook(Path_GreenTable)
   SheetAc=GreenTable.active
   Start_Number=integerbox("Введите начальный номер строки","Ввод числа от 3 до "+ str(SheetAc.max_row),3,3,SheetAc.max_row)
-  CountRepead=integerbox("Введите количество повторов","Ввод числа от 1 до "+ str(SheetAc.max_row-3),SheetAc.max_row-3,1,SheetAc.max_row-3)
+  CountRepead=integerbox("Введите количество повторов","Ввод числа от 1 до "+ str(SheetAc.max_row-Start_Number),SheetAc.max_row-Start_Number,1,SheetAc.max_row-Start_Number)
 
   for  tyty in SheetAc['E'+str(Start_Number):'G'+ str(Start_Number + CountRepead - 1)]:
     for strk in tyty :#cell_range:  E-G
@@ -82,6 +82,7 @@ if __name__=='__main__':
         driver.get(url)
       except:
         logger.warning("URL недействителен: "+url)
+        SheetAc['D'+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor)
         continue  
       try:
         WebDriverWait(driver,20).until(EC.visibility_of_element_located((By.ID,'highcharts-information-region-1'))) 
@@ -89,6 +90,7 @@ if __name__=='__main__':
         #mb.showwarning("Ошибка","Страница не загружена. \n Программа завершит работу")
         #Close_Aplications()        
         logger.warning("Страница не загружена: "+SheetAc['B'+str(i2)].value +'; URL---> '+url)
+        SheetAc['D'+str(i2)].fill=st.PatternFill('solid',fgColor=RedColor)
         continue  
 
       try:
