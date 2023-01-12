@@ -43,7 +43,6 @@ def Compare_Field(Litera:str,Ref:int)->None:
     SheetAc[Litera].value=Ref
     return
 
-
 #******************************* main ******************************************
 if __name__=='__main__': 
   
