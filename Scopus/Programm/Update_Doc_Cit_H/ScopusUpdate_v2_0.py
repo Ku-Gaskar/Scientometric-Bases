@@ -94,7 +94,8 @@ if __name__=='__main__':
 
       try:
         s1=driver.find_elements(By.CSS_SELECTOR,'span.typography_ceae25.font-size-xl_ceae25.sans_ceae25')
-        s2=driver.find_element(By.CSS_SELECTOR,'#scopus-author-profile-page-control-microui__documents-tab > span').text
+        s2=driver.find_element(By.CSS_SELECTOR,'#documents > span').text
+        ##documents #documents
         s2=re.findall(r'[ 0-9]*',s2)[0]
         client.Citir=int(s1[0].text.replace(' ',''))
         client.CountDoc=int(s2.replace(' ',''))
