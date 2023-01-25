@@ -8,11 +8,12 @@ import re
 import os
 #********************************************************************
 def data_preparation(one_autor):
-    data=['']*11
+    data=['']*12
     data[0]=re.findall(r'eid=(2-s2.0-[0-9]{8,15})[&]?',one_autor)[0]    # eid
-    data[1]=re.findall(r'title=\{(.*)\}',one_autor)[0]            # title
-    data[2]=re.findall(r'journal=\{(.*)\}',one_autor)[0]          # journal
-    data[3]=re.findall(r'year=\{(.*)\}',one_autor)[0]             # year
+    data[1]=re.findall(r'title=\{(.*)\}',one_autor)[0]                  # title
+    data[2]=re.findall(r'journal=\{(.*)\}',one_autor)[0]                # journal
+    data[3]=re.findall(r'year=\{(.*)\}',one_autor)[0]                   # year
+    data[11]=re.findall(r'author=\{(.*)\}',one_autor)[0]
     if 'volume={' in one_autor:
         data[4]=re.findall(r'volume=\{(.*)\}',one_autor)[0]
     if 'number={' in one_autor:
@@ -33,8 +34,8 @@ def data_preparation(one_autor):
 def update_scopus(db_conect,one_autor):
     data=data_preparation(one_autor)
     cursor = db_conect.cursor()
-    cursor.execute("""INSERT INTO public.scopus AS t(eid,title,journal,year,volume,number,pages,doi,note,publisher,document_type) 
-            SELECT * FROM (values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)) v(eid,title,journal,year,volume,number,pages,doi,note,publisher,document_type) 
+    cursor.execute("""INSERT INTO public.scopus AS t(eid,title,journal,year,volume,number,pages,doi,note,publisher,document_type,author) 
+            SELECT * FROM (values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)) v(eid,title,journal,year,volume,number,pages,doi,note,publisher,document_type,author) 
             WHERE NOT EXISTS  (SELECT FROM public.scopus AS d where d.eid = v.eid) 
             on conflict do nothing returning "eid";""",tuple(data))
     res=cursor.fetchone()
