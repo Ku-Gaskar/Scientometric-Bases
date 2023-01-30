@@ -1,4 +1,4 @@
-## Работа с Postges
+## Работа с Postgres
 __Read_xlsx_update_postgres (`Таблица_ученных_`) -> таблицы `{Table_Sсience_HNURE, autors_in_departments,departments,lat_name_hnure}`__
 *заполнение таблиц базы данных из зеленной таблицы*
 
