@@ -1,12 +1,40 @@
 import psycopg2 
 from psycopg2 import Error
 
+#import app_logger
+
 
 from tkinter import filedialog
 import tkinter.messagebox as mb
 import sys
 import re
 import os
+#********************************************************************
+#logger
+import logging
+
+_log_format = f"%(asctime)s - [%(levelname)s] - %(name)s - (%(filename)s).%(funcName)s(%(lineno)d) - %(message)s"
+
+def get_file_handler():
+    file_handler = logging.FileHandler("XXX_XXX.log")
+    file_handler.setLevel(logging.WARNING)
+    file_handler.setFormatter(logging.Formatter(_log_format))
+    return file_handler
+
+def get_stream_handler():
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
+    stream_handler.setFormatter(logging.Formatter(_log_format))
+    return stream_handler
+
+def get_logger(name):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    logger.addHandler(get_file_handler())
+    logger.addHandler(get_stream_handler())
+    return logger
+
+
 #********************************************************************
 LIST_columns=('Unique-ID','Title','Journal','Year','Author','Volume','Number','Pages','DOI','Times-Cited',
               'Publisher','Type')
@@ -61,15 +89,9 @@ def update_wos(db_conect,one_autor):
             if author in r_orcid: author_orcid=r_orcid[author]   
             if author in r_id: author_r_id=r_id[author]
             author_id_hnure=search_in_table_hnure_for_author(author,cursor,author_orcid) 
-    else: 
-#test----------------------------------------------------------------
-        for author in data[4].split(" and "):
-            author_orcid,author_r_id='',''
-            if author in r_orcid: author_orcid=r_orcid[author]   
-            if author in r_id: author_r_id=r_id[author]
-            author_id_hnure=search_in_table_hnure_for_author(author,cursor,author_orcid)
             if  len(author_id_hnure) > 1:
-                print(f"ERROR: more than 1 -> {len(author_id_hnure)} :\n{author_id_hnure}")
+                logger.warning(f"ERROR: more than 1 -> {len(author_id_hnure)} :\n{data[0]} --> {author_id_hnure}")
+                #print(f"ERROR: more than 1 -> {len(author_id_hnure)} :\n{author_id_hnure}")
                 
                 author_id_hnure=int(author_id_hnure[0][0])
             elif len(author_id_hnure)==1:
@@ -80,8 +102,7 @@ def update_wos(db_conect,one_autor):
             SELECT unique_id,orcid,researcher_id,author,id_autor::int FROM (values (%s,%s,%s,%s,%s)) v(unique_id,orcid,researcher_id,author,id_autor) 
             WHERE NOT EXISTS  (SELECT FROM public.wos_autors AS d where (d.unique_id = v.unique_id) and (d.author = v.author)) 
             on conflict do nothing returning "id_autor";""",(data[0],author_orcid ,author_r_id,author,author_id_hnure))
-
-#test----------------------------------------------------------------
+    else: 
         cursor.execute("""UPDATE public.wos AS s SET note = %s, data_update = now()
                             WHERE  s.unique_id = %s 
                             RETURNING  s.unique_id;""",(data[9],data[0]))
@@ -116,6 +137,7 @@ def main():
                 update_wos(db_conect,One_Autor)            
         
     except (Exception, Error) as error:
+        logger.warning("Ошибка при работе : "+ error)
         print("Ошибка при работе :", error)
     finally:
         if db_conect:
@@ -126,4 +148,6 @@ def main():
 #********************************************************************
 
 if __name__=="__main__":
+    logger = get_logger(__name__)
+    logger.info("Программа стартует")
     main()    
