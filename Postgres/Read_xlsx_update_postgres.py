@@ -4,7 +4,7 @@ from psycopg2 import Error
 import re
 import openpyxl
 
-path_xlsx = 'd:\\Work_AVERS\\Python\\Scientometric-Bases\\Data\\Таблица ученых 2023-01-12.xlsx'
+path_xlsx = 'd:\\Work_AVERS\\Python\\Scientometric-Bases\\Data\\Таблица ученых 2023-02-16.xlsx'
 
 #********************************************************************
 def open_sheet(path_:str) -> openpyxl.Workbook.active:
