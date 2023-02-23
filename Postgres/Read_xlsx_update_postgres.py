@@ -4,6 +4,8 @@ from psycopg2 import Error
 import re
 import openpyxl
 
+NOT_DEP_NAME='НЕ ОПРЕДЕЛЕНА'
+
 path_xlsx = 'd:\\Work_AVERS\\Python\\Scientometric-Bases\\Data\\Таблица ученых 2023-02-16.xlsx'
 
 #********************************************************************
@@ -11,15 +13,51 @@ def open_sheet(path_:str) -> openpyxl.Workbook.active:
   GreenTable = openpyxl.load_workbook(path_)
   return GreenTable.active
 #********************************************************************
-def create_tabel_latName(conect):
-    quert="""CREATE TABLE IF NOT EXISTS public.lat_name_hnure
+def create_tabels(conect):
+    """создание таблиц latName_Table, Sсience_HNURE, autors_in_departments, department """
+    
+    List_quert=[
+    """CREATE TABLE IF NOT EXISTS public.lat_name_hnure
         (
         id_autor bigint NOT NULL,
         name_lat text COLLATE pg_catalog."default" NOT NULL
         )
+    TABLESPACE "T ";""",
+    
+    """CREATE TABLE IF NOT EXISTS public."Table_Sсience_HNURE"
+        (
+            "id_Sciencer" bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
+            "FIO" text COLLATE pg_catalog."default" NOT NULL,
+            "ID_Scopus_Author" character varying COLLATE pg_catalog."default",
+            "Researcher_ID" character varying COLLATE pg_catalog."default",
+            "ORCID_ID" character varying COLLATE pg_catalog."default",
+            "Data_Time" timestamp without time zone NOT NULL DEFAULT now(),
+            CONSTRAINT "T " PRIMARY KEY ("id_Sciencer")
+        )
+    TABLESPACE "T ";""",
+    
+    """CREATE TABLE IF NOT EXISTS public.autors_in_departments_old
+        (
+            id_autors bigint NOT NULL,
+            name_autor character varying COLLATE pg_catalog."default" NOT NULL,
+            name_department character varying COLLATE pg_catalog."default" NOT NULL,
+            id_depatment bigint NOT NULL
+        )
+    TABLESPACE "T ";""",
+
+    """CREATE TABLE IF NOT EXISTS public.departments
+        (
+            id_depat bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 10001 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
+            name_depat character varying COLLATE pg_catalog."default" NOT NULL,
+            CONSTRAINT departments_pkey PRIMARY KEY (id_depat)
+        )
     TABLESPACE "T ";"""
+    ]
+    
     cursor = conect.cursor()
-    cursor.execute(quert)
+    for query in List_quert:
+        cursor.execute(query)
+    
     conect.commit()
     return True
 #********************************************************************
@@ -43,7 +81,7 @@ def ready_data_autor(sheet,i):
 #********************************************************************
 def update_db(conect):
   
-    create_tabel_latName(conect)
+    create_tabels(conect)
     sheet=open_sheet(path_xlsx)
     cursor = conect.cursor()
     conect.autocommit = True
@@ -61,9 +99,10 @@ def update_db(conect):
                               WHERE  t."FIO" = %s ;""",(data_autor[0],))
             Id_Autor=cursor.fetchone()[0]
         
-        if not data_autor[3]: data_autor[3]="X????X"
+        if not data_autor[3]: data_autor[3]=NOT_DEP_NAME
         for dp in data_autor[3].upper().split(','):           
             # заполняем таблицу departments
+            dp=dp.strip()
             cursor.execute("""INSERT INTO public.departments AS t(name_depat) 
                 SELECT * FROM (values (%s)) v(name_depat) 
                 WHERE NOT EXISTS  (SELECT FROM public.departments AS d where d.name_depat = v.name_depat) 
