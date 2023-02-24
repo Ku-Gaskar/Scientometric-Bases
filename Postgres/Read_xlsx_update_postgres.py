@@ -4,7 +4,7 @@ from psycopg2 import Error
 import re
 import openpyxl
 
-NOT_DEP_NAME='НЕ ОПРЕДЕЛЕНА'
+NOT_DEP_NAME=''
 
 path_xlsx = 'd:\\Work_AVERS\\Python\\Scientometric-Bases\\Data\\Таблица ученых 2023-02-16.xlsx'
 
@@ -32,11 +32,11 @@ def create_tabels(conect):
             "Researcher_ID" character varying COLLATE pg_catalog."default",
             "ORCID_ID" character varying COLLATE pg_catalog."default",
             "Data_Time" timestamp without time zone NOT NULL DEFAULT now(),
-            CONSTRAINT "T " PRIMARY KEY ("id_Sciencer")
+            CONSTRAINT "Table_Sсience_HNURE_pkey" PRIMARY KEY ("id_Sciencer")
         )
     TABLESPACE "T ";""",
     
-    """CREATE TABLE IF NOT EXISTS public.autors_in_departments_old
+    """CREATE TABLE IF NOT EXISTS public.autors_in_departments
         (
             id_autors bigint NOT NULL,
             name_autor character varying COLLATE pg_catalog."default" NOT NULL,
@@ -47,11 +47,16 @@ def create_tabels(conect):
 
     """CREATE TABLE IF NOT EXISTS public.departments
         (
-            id_depat bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 10001 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
+            id_depat bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 10000 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
             name_depat character varying COLLATE pg_catalog."default" NOT NULL,
-            CONSTRAINT departments_pkey PRIMARY KEY (id_depat)
+            CONSTRAINT depart_pkey PRIMARY KEY (id_depat)
         )
-    TABLESPACE "T ";"""
+    TABLESPACE "T ";""",
+    
+    f"""INSERT INTO public.departments AS t(name_depat) 
+                SELECT * FROM (values ('{NOT_DEP_NAME}')) v(name_depat) 
+                WHERE NOT EXISTS  (SELECT FROM public.departments AS d where d.name_depat = v.name_depat) 
+                on conflict do nothing returning id_depat;"""
     ]
     
     cursor = conect.cursor()
@@ -86,8 +91,10 @@ def update_db(conect):
     cursor = conect.cursor()
     conect.autocommit = True
     for i in range(3,sheet.max_row+1):
+        if not i%20: print('-',end='')
         if not sheet['B'+str(i)].value: continue
         data_autor=ready_data_autor(sheet,i)        
+        # таблица ученных        
         cursor.execute("""INSERT INTO public."Table_Sсience_HNURE" AS t("FIO","ID_Scopus_Author","ORCID_ID") 
             SELECT * FROM (values (%s,%s,%s)) v("FIO","ID_Scopus_Author","ORCID_ID") 
             WHERE NOT EXISTS  (SELECT FROM public."Table_Sсience_HNURE" AS d where d."FIO" = v."FIO") 
