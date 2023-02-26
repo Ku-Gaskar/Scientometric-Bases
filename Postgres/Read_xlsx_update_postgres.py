@@ -56,7 +56,16 @@ def create_tabels(conect):
     f"""INSERT INTO public.departments AS t(name_depat) 
                 SELECT * FROM (values ('{NOT_DEP_NAME}')) v(name_depat) 
                 WHERE NOT EXISTS  (SELECT FROM public.departments AS d where d.name_depat = v.name_depat) 
-                on conflict do nothing returning id_depat;"""
+                on conflict do nothing returning id_depat;""",
+    
+    """CREATE TABLE IF NOT EXISTS public.author_in_scopus
+        (
+            id_author bigint NOT NULL,
+            id_scopus character varying COLLATE pg_catalog."default" NOT NULL
+        )
+
+    TABLESPACE "T ";"""
+            
     ]
     
     cursor = conect.cursor()
@@ -136,6 +145,13 @@ def update_db(conect):
                         SELECT * FROM (values (%s,%s)) v(id_autor,name_lat) 
                         WHERE NOT EXISTS  (SELECT FROM public.lat_name_hnure AS d where d.id_autor = v.id_autor AND d.name_lat = v.name_lat) 
                         on conflict do nothing returning id_autor;""",(Id_Autor,f_name))
+        #заполняем таблицу author_in_scopus
+        if data_autor[1]:
+            cursor.execute("""INSERT INTO public.author_in_scopus AS t(id_author,id_scopus) 
+                SELECT * FROM (values (%s,%s)) v(id_author,id_scopus) 
+                WHERE NOT EXISTS  (SELECT FROM public.author_in_scopus AS d where d.id_author = v.id_author AND d.id_scopus = v.id_scopus) 
+                on conflict do nothing returning id_author;""",(Id_Autor,data_autor[1]))
+
 
     res=cursor.fetchone()
     if not res: return 0
