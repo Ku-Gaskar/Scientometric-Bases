@@ -61,11 +61,13 @@ def create_tabels(conect):
     """CREATE TABLE IF NOT EXISTS public.author_in_scopus
         (
             id_author bigint NOT NULL,
-            id_scopus character varying COLLATE pg_catalog."default" NOT NULL
+            id_scopus character varying COLLATE pg_catalog."default" NOT NULL,
+            doc character varying COLLATE pg_catalog."default",
+            note character varying COLLATE pg_catalog."default",
+            h_ind character varying COLLATE pg_catalog."default"
         )
 
     TABLESPACE "T ";"""
-            
     ]
     
     cursor = conect.cursor()
@@ -76,22 +78,28 @@ def create_tabels(conect):
     return True
 #********************************************************************
 def ready_data_autor(sheet,i):
-    autor=['']*5
+    
+    author={}    # autor=['']*5
     name_autor=sheet['B'+str(i)].value 
 
-    autor[0]=' '.join(c.capitalize() if ("`" in c) or ("'" in c) else c.title() for c in name_autor.split())
+    author['name_author']=' '.join(c.capitalize() if ("`" in c) or ("'" in c) else c.title() for c in name_autor.split())
+    author['id_scopus']=''
     if sheet['D'+str(i)].value:
         find=re.findall(r'authorid=([\d]*)',sheet['D'+str(i)].value.lower())
         if find:
-            autor[1]=find[0]    #ID_Scopus authorId=57200986251
+            author['id_scopus']=find[0]    #ID_Scopus authorId=57200986251
+    author['id_orcid']=''
     if sheet['C'+str(i)].value:
         find=re.findall(r'orcid.org/(.{4}-.{4}-.{4}-.{4})',sheet['C'+str(i)].value)
         if find:
-            autor[2]=find[0]  #ID_Orcid 0000-0003-0803-7222
-    autor[3]=sheet['L'+str(i)].value # Кафедра
-    autor[4]=sheet['R'+str(i)].value # Латинские варианты фамилии
+            author['id_orcid']=find[0]  #ID_Orcid 0000-0003-0803-7222
+    author['dep']=sheet['L'+str(i)].value # Кафедра
+    author['lat_name']=sheet['R'+str(i)].value # Латинские варианты фамилии
+    author['sc_doc'] = int(sheet['E'+str(i)].value)  if sheet['E'+str(i)].value else 0 # doc количество документов scopus
+    author['sc_note'] =int(sheet['F'+str(i)].value)  if sheet['F'+str(i)].value  else 0  # note цитирования документов  scopus
+    author['sc_h_ind'] =int(sheet['G'+str(i)].value) if sheet['G'+str(i)].value  else  0 # h-index scopus 
 
-    return autor
+    return author
 #********************************************************************
 def update_db(conect):
   
@@ -102,21 +110,21 @@ def update_db(conect):
     for i in range(3,sheet.max_row+1):
         if not i%20: print('-',end='')
         if not sheet['B'+str(i)].value: continue
-        data_autor=ready_data_autor(sheet,i)        
+        data_author=ready_data_autor(sheet,i)        
         # таблица ученных        
         cursor.execute("""INSERT INTO public."Table_Sсience_HNURE" AS t("FIO","ID_Scopus_Author","ORCID_ID") 
             SELECT * FROM (values (%s,%s,%s)) v("FIO","ID_Scopus_Author","ORCID_ID") 
             WHERE NOT EXISTS  (SELECT FROM public."Table_Sсience_HNURE" AS d where d."FIO" = v."FIO") 
-            on conflict do nothing returning "id_Sciencer";""",tuple(data_autor[:3]))
+            on conflict do nothing returning "id_Sciencer";""",(data_author['name_author'],data_author['id_scopus'],data_author['id_orcid']))
         res=cursor.fetchone()
         if res: Id_Autor=res[0]
         else: 
             cursor.execute("""SELECT t."id_Sciencer" FROM public."Table_Sсience_HNURE"  AS t
-                              WHERE  t."FIO" = %s ;""",(data_autor[0],))
+                              WHERE  t."FIO" = %s ;""",(data_author['name_author'],))
             Id_Autor=cursor.fetchone()[0]
         
-        if not data_autor[3]: data_autor[3]=NOT_DEP_NAME
-        for dp in data_autor[3].upper().split(','):           
+        if not data_author['dep']: data_author['dep']=NOT_DEP_NAME
+        for dp in data_author['dep'].upper().split(','):           
             # заполняем таблицу departments
             dp=dp.strip()
             cursor.execute("""INSERT INTO public.departments AS t(name_depat) 
@@ -134,23 +142,30 @@ def update_db(conect):
             cursor.execute("""INSERT INTO public.autors_in_departments AS t(id_autors,name_autor,id_depatment,name_department) 
                 SELECT * FROM (values (%s,%s,%s,%s)) v(id_autors,name_autor,id_depatment,name_department) 
                 WHERE NOT EXISTS  (SELECT FROM public.autors_in_departments AS d where d.id_autors = v.id_autors AND d.id_depatment = v.id_depatment) 
-                on conflict do nothing returning id_autors;""",(Id_Autor,data_autor[0],id_dp,dp))
+                on conflict do nothing returning id_autors;""",(Id_Autor,data_author['name_author'],id_dp,dp))
 
         # заполняем таблицу LatName
-        if data_autor[4]: 
-            for f_name in data_autor[4].split(';'):
+        if data_author['lat_name']: 
+            for f_name in data_author['lat_name'].split(';'):
                 f_name=f_name.strip()
                 if f_name:
                     cursor.execute("""INSERT INTO public.lat_name_hnure AS t(id_autor,name_lat) 
                         SELECT * FROM (values (%s,%s)) v(id_autor,name_lat) 
                         WHERE NOT EXISTS  (SELECT FROM public.lat_name_hnure AS d where d.id_autor = v.id_autor AND d.name_lat = v.name_lat) 
                         on conflict do nothing returning id_autor;""",(Id_Autor,f_name))
+
         #заполняем таблицу author_in_scopus
-        if data_autor[1]:
-            cursor.execute("""INSERT INTO public.author_in_scopus AS t(id_author,id_scopus) 
-                SELECT * FROM (values (%s,%s)) v(id_author,id_scopus) 
+        if data_author['id_scopus']:
+            cursor.execute(f"""INSERT INTO public.author_in_scopus AS t(id_author,id_scopus,doc,note,h_ind) 
+                SELECT * FROM (values ({Id_Autor},'{data_author['id_scopus']}',{data_author['sc_doc']},{data_author['sc_note']},{data_author['sc_h_ind']})) v(id_author,id_scopus,doc,note,h_ind) 
                 WHERE NOT EXISTS  (SELECT FROM public.author_in_scopus AS d where d.id_author = v.id_author AND d.id_scopus = v.id_scopus) 
-                on conflict do nothing returning id_author;""",(Id_Autor,data_autor[1]))
+                on conflict do nothing returning id_author;""")
+            
+        # #заполняем таблицу sc_author_info
+        #     cursor.execute(f"""INSERT INTO public.sc_author_info AS t(id_author,id_scopus,doc,note,h_ind) 
+        #         SELECT * FROM (values ()) v(id_author,id_scopus,doc,note,h_ind) 
+        #         WHERE NOT EXISTS  (SELECT FROM public.sc_author_info AS d where d.id_author = v.id_author AND d.id_scopus = v.id_scopus) 
+        #         on conflict do nothing returning id_author;""")        
 
 
     res=cursor.fetchone()
