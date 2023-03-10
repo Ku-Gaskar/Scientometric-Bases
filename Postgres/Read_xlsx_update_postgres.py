@@ -32,6 +32,7 @@ def create_tabels(conect):
             "Researcher_ID" character varying COLLATE pg_catalog."default",
             "ORCID_ID" character varying COLLATE pg_catalog."default",
             "Data_Time" timestamp without time zone NOT NULL DEFAULT now(),
+            works bool NOT NULL DEFAULT true,
             CONSTRAINT "Table_Sсience_HNURE_pkey" PRIMARY KEY ("id_Sciencer")
         )
     TABLESPACE "T ";""",
@@ -67,14 +68,35 @@ def create_tabels(conect):
             h_ind character varying COLLATE pg_catalog."default"
         )
 
-    TABLESPACE "T ";"""
+    TABLESPACE "T ";""",
+
+    """DROP TABLE IF EXISTS public.stamp_tables;""",
+
+    """CREATE TABLE IF NOT EXISTS public.stamp_tables
+    (
+        dimensions integer[] NOT NULL,
+        title character varying[] COLLATE pg_catalog."default" NOT NULL,
+        class_col character varying[] COLLATE pg_catalog."default",
+        href character varying[] COLLATE pg_catalog."default",
+        id_table name COLLATE pg_catalog."C" NOT NULL,
+        href_postfix character varying[] COLLATE pg_catalog."default",
+        CONSTRAINT stamp_tables_pkey PRIMARY KEY (id_table)
+    )
+
+    TABLESPACE "T ";
+    """,
+    """INSERT INTO public.stamp_tables (dimensions,title,class_col,href,id_table,href_postfix) VALUES
+	 ('{7,35,10,18,10,10,10}','{"ID Автора",ФИО,Кафедра,ID_Scopus,Кол.док,Цити-рования,H-индекс}','{text-center,NULL,text-center,text-center,"text-end px-3","text-end px-3","text-end px-3"}','{NULL,NULL,NULL,https://www.scopus.com/authid/detail.uri?authorId=,NULL,NULL,NULL}','author','{NULL,NULL,NULL,NULL,NULL,NULL,NULL}'),
+	 ('{10,35,22,8,10,15}','{EID,"Название публикации",Авторы,Год,"Тип докум.",Журнал}','{text-center,NULL,NULL,text-center,text-center,NULL}','{https://www.scopus.com/record/display.uri?eid=,NULL,NULL,NULL,NULL,NULL}','article','{&origin=resultslist&sort=plf-f,NULL,NULL,NULL,NULL,NULL}');
+    """
     ]
-    
+
+    conect.autocommit = True
     cursor = conect.cursor()
     for query in List_quert:
         cursor.execute(query)
     
-    conect.commit()
+    # conect.commit()
     return True
 #********************************************************************
 def ready_data_autor(sheet,i):
@@ -159,13 +181,7 @@ def update_db(conect):
             cursor.execute(f"""INSERT INTO public.author_in_scopus AS t(id_author,id_scopus,doc,note,h_ind) 
                 SELECT * FROM (values ({Id_Autor},'{data_author['id_scopus']}',{data_author['sc_doc']},{data_author['sc_note']},{data_author['sc_h_ind']})) v(id_author,id_scopus,doc,note,h_ind) 
                 WHERE NOT EXISTS  (SELECT FROM public.author_in_scopus AS d where d.id_author = v.id_author AND d.id_scopus = v.id_scopus) 
-                on conflict do nothing returning id_author;""")
-            
-        # #заполняем таблицу sc_author_info
-        #     cursor.execute(f"""INSERT INTO public.sc_author_info AS t(id_author,id_scopus,doc,note,h_ind) 
-        #         SELECT * FROM (values ()) v(id_author,id_scopus,doc,note,h_ind) 
-        #         WHERE NOT EXISTS  (SELECT FROM public.sc_author_info AS d where d.id_author = v.id_author AND d.id_scopus = v.id_scopus) 
-        #         on conflict do nothing returning id_author;""")        
+                on conflict do nothing returning id_author;""")     
 
 
     res=cursor.fetchone()
